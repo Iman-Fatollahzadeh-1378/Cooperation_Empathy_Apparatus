@@ -1,0 +1,67 @@
+# 📦 Install required packages
+!pip install pandas statsmodels openpyxl pingouin --quiet
+
+# 📦 Import needed libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 📁 Upload your file
+from google.colab import files
+uploaded = files.upload()
+filename = next(iter(uploaded))
+
+# 📄 Load the file (CSV or Excel)
+import pandas as pd
+if filename.endswith('.csv'):
+    df = pd.read_csv(filename)
+else:
+    df = pd.read_excel(filename)
+
+# 🧹 Clean up
+df.columns = df.columns.str.strip()
+df['Group'] = df['Group'].astype(str).str.strip()
+df['TestTime'] = df['TestTime'].astype(str).str.strip()
+df['Pair'] = df['Pair'].astype(str).str.strip()
+df['Latency'] = pd.to_numeric(df['Latency'], errors='coerce')
+group_stats = df.groupby('Group')['Latency'].agg(['mean', 'sem']).reset_index()
+
+# 🧠 Linear Mixed Model
+import statsmodels.formula.api as smf
+model = smf.mixedlm("Latency ~ Group * TestTime", df, groups=df["Pair"])
+lmm_result = model.fit()
+
+# 📊 Show model output
+print("✅ Linear Mixed Effects Model Results:")
+print(lmm_result.summary())
+
+# ✅ Check significance of 'Group' effect
+print("\n🔍 Interpretation:")
+group_pval = lmm_result.pvalues.get("Group[T.NonBrother_CoCage]", None)
+if group_pval and group_pval < 0.05:
+    print("✅ There is a significant effect of Group on Latency (p < 0.05)")
+else:
+    print("❌ No significant effect of Group on Latency (p ≥ 0.05)")
+
+# 📎 Pairwise post-hoc test
+
+
+    # 🎨 Plot
+plt.figure(figsize=(8, 6))
+sns.barplot(
+    data=df,
+    x='Group',
+    y='Latency',
+    estimator='mean',
+    errorbar='se',    # ✅ correct for Seaborn 0.12+
+    palette='Set2'
+)
+
+# ✨ Style the plot
+plt.title("Mean Latency by Group with SEM")
+plt.xlabel("Group")
+plt.ylabel("Latency (s)")
+plt.grid(axis='y', linestyle='--', alpha=0.5)
+plt.tight_layout()
+
+plt.show()
