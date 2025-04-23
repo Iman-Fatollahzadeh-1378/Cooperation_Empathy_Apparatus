@@ -1,0 +1,132 @@
+//به نام خداوند جان و خرد/ کز این برتر اندیشه برنگذرد//
+#include <SPI.h>
+#include <SD.h>
+#include <Servo.h>
+
+Servo servoN; 
+Servo servoS;
+
+const int initialAngleNorth = 27;
+const int finalAngleNorth = 47;
+const int initialAngleSouth = 48;
+const int finalAngleSouth = 65;
+
+const int buttonChar = 9;
+const int buttonFour = 8;
+
+File myFile;
+
+/* Button States */
+bool pressStateChar = true;   // Initial state for Button Three
+bool pressStateFour = true;  // Initial state for Button Four
+
+unsigned long pressTimeChar = 0;
+unsigned long pressTimeFour = 0;
+
+// Track previous button states for edge detection
+bool lastButtonCharState = LOW;
+bool lastButtonFourState = LOW;
+
+// Servo timing
+bool isMovingChar = false;
+bool isMovingFour = false;
+unsigned long moveStartTimeChar = 0;
+unsigned long moveStartTimeFour = 0;
+const int moveDuration = 500; // Hold position for 500ms
+
+
+
+void setup() {
+  pinMode(buttonChar, INPUT_PULLUP);
+  pinMode(buttonFour, INPUT_PULLUP);
+
+  servoN.attach(7); 
+  servoS.attach(10);
+
+  servoN.write(initialAngleNorth);
+  servoS.write(initialAngleSouth); 
+
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect
+  }
+
+  Serial.print("Initializing SD card...");
+  if (!SD.begin(4)) {
+    Serial.println("initialization failed!");
+    while (1);
+  }
+  Serial.println("initialization done.");
+}
+
+void loop(){
+  unsigned long currentMillis = millis();
+
+  /* Button Three */
+  bool currentButtonCharState = digitalRead(buttonChar);
+  if (currentButtonCharState == HIGH && lastButtonCharState == LOW && pressStateChar && !isMovingChar) {
+    // Edge detection: Execute on button press (LOW to HIGH)
+    pressStateChar = false;   // Disable Button Three
+    pressStateFour = true;    // Enable Button Four
+
+    // Move servo to final angle
+    servoN.write(finalAngleNorth);
+    moveStartTimeChar = currentMillis; // Record start time
+    isMovingChar = true; // Set moving flag
+
+    // Record time in SD
+    pressTimeChar = currentMillis;
+    myFile = SD.open("timeChar.txt", FILE_WRITE);
+    if (myFile){
+      Serial.println("Time Char:");
+      Serial.println(pressTimeChar);
+      myFile.println(pressTimeChar);
+      myFile.close(); 
+    }else{
+      
+      Serial.println("Char txt was not opened; but its value was:");
+      Serial.println(pressTimeChar);
+    }
+  }
+  // Return servo to initial position after delay
+  if (isMovingChar && (currentMillis - moveStartTimeChar >= moveDuration)) {
+    servoN.write(initialAngleNorth); // Move back to initial
+    isMovingChar = false; // Reset flag
+  }
+
+  lastButtonCharState = currentButtonCharState; // Update last state
+
+  /* Button Four */
+  bool currentButtonFourState = digitalRead(buttonFour);
+  if (currentButtonFourState == HIGH && lastButtonFourState == LOW && pressStateFour && !isMovingFour) {
+    // Edge detection: Execute on button press (LOW to HIGH)
+    pressStateFour = false;   // Disable Button Four
+    pressStateChar = true;    // Enable Button Three
+
+    // Move servo to final angle
+    servoS.write(finalAngleSouth);
+    moveStartTimeFour = currentMillis; // Record start time
+    isMovingFour = true; // Set moving flag
+
+    // Record time in SD
+    pressTimeFour = currentMillis;
+    myFile = SD.open("timeFour.txt", FILE_WRITE);
+    if (myFile){
+      Serial.println("Time Four:");
+      Serial.println(pressTimeFour);
+      myFile.println(pressTimeFour);
+      myFile.close(); 
+    }else{
+      
+      Serial.println("Four txt was not opened; but its value was:");
+      Serial.println(pressTimeFour);
+    }
+  }
+  // Return servo to initial position after delay
+  if (isMovingFour && (currentMillis - moveStartTimeFour >= moveDuration)) {
+    servoS.write(initialAngleSouth); // Move back to initial
+    isMovingFour = false; // Reset flag
+  }
+
+  lastButtonFourState = currentButtonFourState; // Update last state
+}
