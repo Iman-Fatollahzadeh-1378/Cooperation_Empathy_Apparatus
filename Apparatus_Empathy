@@ -1,0 +1,220 @@
+//I added to this file surety that when SD card failed to work, i print the time in the screen. 
+#include <SPI.h>
+
+#include <SD.h>
+
+#include <Servo.h>
+
+Servo servoR; 
+Servo servoL;
+Servo servoN; 
+Servo servoS;
+
+const int initialAngleRight = 44;
+const int finalAngleRight = 90;
+const int initialAngleL = 12;
+const int finalAngleL = 63;
+
+const int initialAngleNorth = 29;
+const int finalAngleNorth = 47;
+const int initialAngleSouth = 56;
+const int finalAngleSouth = 70;
+
+
+
+
+
+const int buttonOne = 5;
+const int buttonTwo = 6;
+const int buttonChar = 9;
+const int buttonFour = 8;
+
+//const int ledR= 7;
+//const int ledL = 8;
+
+
+File myFile;
+boolean pressStateOne = true;
+boolean pressStateTwo = true;
+boolean pressStateChar = true;
+boolean pressStateFour = true;
+
+unsigned long durationSd = 10000;
+
+unsigned long pressTimeOne = 0;
+unsigned long pressTimeTwo = 0;
+unsigned long pressTimeChar = 0;
+unsigned long pressTimeFour = 0;
+
+
+void setup() {
+
+  pinMode(buttonOne, INPUT_PULLUP);
+  pinMode(buttonTwo, INPUT_PULLUP);
+  pinMode(buttonChar, INPUT_PULLUP);
+  pinMode(buttonFour, INPUT_PULLUP);
+
+  //pinMode(ledL, OUTPUT);
+  //pinMode(ledR, OUTPUT); 
+
+  //digitalWrite(ledR, LOW);
+  //digitalWrite(ledL, LOW);
+
+  servoR.attach(2); 
+  servoL.attach(3);
+  servoN.attach(7); 
+  servoS.attach(10);
+
+  servoR.write(initialAngleRight);
+  servoL.write(initialAngleL); 
+  servoN.write(initialAngleNorth);
+  servoS.write(initialAngleSouth); 
+  
+
+
+
+
+  Serial.begin(9600);
+
+  while (!Serial) {
+
+    ; // wait for serial port to connect. Needed for native USB port only
+
+  }
+
+
+
+  Serial.print("Initializing SD card...");
+
+
+  if (!SD.begin(4)) {
+
+    Serial.println("initialization failed!");
+
+    while (1);
+
+  }
+
+  Serial.println("initialization done.");
+
+  
+
+}
+void loop(){
+
+  /* Button One*/
+  if (digitalRead(buttonOne) == HIGH && pressStateOne){
+    pressStateOne = !pressStateOne;
+    servoR.write(finalAngleRight);
+    pressTimeOne = millis();
+    Serial.println("touch detected");
+    //digitalWrite(ledR, HIGH);
+    
+    myFile = SD.open("timeOne.txt", FILE_WRITE);
+    if (myFile){
+      Serial.println(pressTimeOne);
+      myFile.println(pressTimeOne);
+      myFile.close(); 
+    }else{
+      Serial.println("error opening timeOne.txt");
+      Serial.println("One txt was not opened; but its value was:");
+      Serial.println(pressTimeOne);
+    }
+  }
+  if (digitalRead(buttonOne) == LOW && !pressStateOne){
+    if (millis() - pressTimeOne >= 2000) {
+      servoR.write(initialAngleRight);
+      //digitalWrite(ledR, LOW); 
+      pressStateOne = true;
+    }
+  }
+
+  /* Button Two*/
+  if (digitalRead(buttonTwo) == HIGH && pressStateTwo){
+    pressStateTwo = !pressStateTwo;
+    servoL.write(finalAngleL);
+    pressTimeTwo = millis();
+    //digitalWrite(ledL, HIGH);
+    
+    myFile = SD.open("timeTwo.txt", FILE_WRITE);
+    if (myFile){
+      Serial.println(pressTimeTwo);
+      myFile.println(pressTimeTwo);
+      myFile.close(); 
+    }else{
+      Serial.println("error opening timeTwo.txt");
+      Serial.println("Two txt was not opened; but its value was:");
+      Serial.println(pressTimeTwo);
+    }
+  }
+  if (digitalRead(buttonTwo) == LOW && !pressStateTwo){
+    if (millis() - pressTimeTwo >= 2000) {
+      servoL.write(initialAngleL);
+      //digitalWrite(ledL, LOW); 
+      pressStateTwo = true;
+    }
+  }
+
+
+
+  /* Button Three*/
+  if (digitalRead(buttonChar) == HIGH && pressStateChar){
+    pressStateChar = !pressStateChar;
+    servoN.write(finalAngleNorth);
+    pressTimeChar = millis();
+    //digitalWrite(ledL, HIGH);
+    
+    myFile = SD.open("timeChar.txt", FILE_WRITE);
+    if (myFile){
+      Serial.println(pressTimeChar);
+      myFile.println(pressTimeChar);
+      myFile.close(); 
+    }else{
+      Serial.println("error opening timeChar.txt");
+      Serial.println("Char txt was not opened; but its value was:");
+      Serial.println(pressTimeChar);
+    }
+  }
+  if (digitalRead(buttonChar) == LOW && !pressStateChar){
+    if (millis() - pressTimeChar >= 2000) {
+      servoN.write(initialAngleNorth);
+      //digitalWrite(ledL, LOW); 
+      pressStateChar = true;
+    }
+  }
+
+
+
+
+  /* Button Four*/
+  if (digitalRead(buttonFour) == HIGH && pressStateFour){
+    pressStateFour = !pressStateFour;
+    servoS.write(finalAngleSouth);
+    pressTimeFour = millis();
+    //digitalWrite(ledR, HIGH);
+    
+    myFile = SD.open("timeFour.txt", FILE_WRITE);
+    if (myFile){
+      Serial.println(pressTimeFour);
+      myFile.println(pressTimeFour);
+      myFile.close(); 
+    }else{
+      Serial.println("error opening timeFour.txt");
+      Serial.println("Four txt was not opened; but its value was:");
+      Serial.println(pressTimeFour);
+    }
+  }
+  if (digitalRead(buttonFour) == LOW && !pressStateFour){
+    if (millis() - pressTimeFour >= 2000) {
+      servoS.write(initialAngleSouth);
+      //digitalWrite(ledR, LOW); 
+      pressStateFour = true;
+    }
+  }
+
+}
+
+
+
+
+
